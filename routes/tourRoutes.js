@@ -5,10 +5,13 @@ const tourController = require('./../controllers/tourController');
 
 const router = express.Router();
 
+router.param('id', tourController.checkID); //Param Middleware. Here we could check if the user is logged in or not,
+// or if the user has the privileg to access to even write to the database.
+
 router
   .route('/')
   .get(tourController.getAllTours)
-  .post(tourController.createTour);
+  .post(tourController.CheckBody, tourController.createTour); // First check CheckBody then createTour
 
 router
   .route('/:id')
