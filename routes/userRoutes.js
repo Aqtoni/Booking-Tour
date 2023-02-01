@@ -1,4 +1,4 @@
-//Routing refers to how an application’s endpoints (URIs) respond to client requests.
+//1) - Routing refers to how an application’s endpoints (URIs) respond to client requests.
 const express = require('express');
 const userController = require('./../controllers/userController');
 //const {getAllUser} = require('./../controllers/userController'); Alternative of userController Object
