@@ -12,10 +12,14 @@ router
   .route('/top-3-cheap')
   .get(tourController.bestTopTours, tourController.getAllTours);
 
+router.route('/tour-statistics').get(tourController.getTourStatistics);
+router.route('/mounthly-plan/:year').get(tourController.getMonthlyPlan);
+
 router
   .route('/')
   .get(tourController.getAllTours)
   .post(tourController.createTour);
+//.get(catchAsync(tourController.getAllTours)); //Alternative of catchAsync witch we use in tourController because all fn is async
 //.post(tourController.CheckBody, tourController.createTour); // First check CheckBody then createTour locally
 
 router

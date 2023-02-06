@@ -41,6 +41,7 @@ const deleteData = async () => {
   } catch (err) {
     console.log(err);
   }
+  // A very abrupt way the shutdown server.
   process.exit();
 };
 

@@ -3,8 +3,11 @@ and return it to the user to view in the browser. */
 // Require the 'fs' and 'express' modules
 // const fs = require('fs');
 const Tour = require('./../models/tourModel');
+const APIFeatures = require('./../utils/apiFeatures');
+const catchAsync = require('./../utils/catchAsync');
+const AppError = require('./../utils/appError');
 
-// Manipulate the query object. This code is an Express middleware function that modifies the request query object. 
+// Manipulate the query object. This code is an Express middleware function that modifies the request query object.
 exports.bestTopTours = (req, res, next) => {
   req.query.limit = '3';
   req.query.sort = '-ratingsAverage,price';
@@ -46,98 +49,44 @@ If both fields are present, it will call the next() function to continue with th
 }; */
 
 // 5) Route Handlers. Create a GET route to retrieve all tours from the tours object
-exports.getAllTours = async (req, res) => {
-  try {
-    // Filtering
-    const queryObj = { ...req.query }; // Hard copy or safe object
-    const excludeFields = ['page', 'sort', 'limit', 'fields'];
-    excludeFields.forEach((el) => delete queryObj[el]);
-    //console.log(req.requestTime); //Information when the request happened
-    /* console.log(req.query, queryObj);  The query string is a set of key-value pairs sent in the URL of an HTTP request. 
-    It is used to pass additional information to the server, such as search terms or other parameters. */
+exports.getAllTours = catchAsync(async (req, res, next) => {
+  // 5.5) Execute the query
+  // Create an Object of the API features class to query a database for Tour documents.
+  const features = new APIFeatures(Tour.find(), req.query)
+    .filter()
+    .sort()
+    .fieldsLimit()
+    .pagination();
+  const tours = await features.query;
 
-    // Advanced filtering MongoDB operators
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-
-    let query = Tour.find(JSON.parse(queryStr));
-
-    /* Filter option 1   
-  const tours = await Tour.find({
-      duration: '5',
-      difficulty: 'easy',
-    }); */
-
-    /* Filter option 2
-    const tours = await Tour.find()
-      .where('duration')
-      .equals(5)
-      .where('difficulty')
-      .equals('easy'); */
-
-    // Sorting  the query based on the value of req.query.sort
-    if (req.query.sort) {
-      const sotrBy = req.query.sort.split(',').join(' ');
-      query = query.sort(req.query.sort); // Value of the field in this case "price"
-      // sort('price raingsAverage');
-    } else {
-      query = query.sort('-createdAt');
-    }
-
-    // Field limiting checking the query string for a field parameter
-    if (req.query.fields) {
-      const fields = req.query.fields.split(',').join(' ');
-      query = query.select(fields);
-    } else {
-      query = query.select('-__v');
-    }
-    // Pagination
-    const page = req.query.page * 1 || 1; // Convert string to number
-    const limit = req.query.limit * 1 || 100;
-    const skip = (page - 1) * limit;
-    // page=3&limit=10, 1-10, page 1, 11-20, page 2, 21-30 page 3
-    query = query.skip(skip).limit(limit);
-
-    if (req.query.page) {
-      const numTours = await Tour.countDocuments();
-      if (skip >= numTours) throw new Error('This page is not available');
-    }
-    // Execute the query
-    const tours = await query;
-    res.status(200).json({
-      statusbar: 'success',
-      // requestedAt: req.requestTime, //Information for users when the request happened
-      // Also Testing local database
-      results: tours.length,
-      data: {
-        tours,
-      },
-    });
-  } catch (err) {
-    res.status(404).json({
-      statusbar: 'fail',
-      message: err,
-    });
-  }
-};
+  // 5.6) Send response
+  res.status(200).json({
+    statusbar: 'success',
+    // requestedAt: req.requestTime, //Information for users when the request happened
+    // Also Testing local database
+    results: tours.length,
+    data: {
+      tours,
+    },
+  });
+});
 
 // Create a GET route to retrieve a single tour from the tours object by using  id
-exports.getTour = async (req, res) => {
-  try {
-    const tour = await Tour.findById(req.params.id);
-    // Tour.findOne({_id: req.params.id}); // Alternative findById
-    res.status(200).json({
-      statusbar: 'success',
-      data: {
-        tour,
-      },
-    });
-  } catch (err) {
-    res.status(404).json({
-      statusbar: 'fail',
-      message: err,
-    });
+exports.getTour = catchAsync(async (req, res, next) => {
+  const tour = await Tour.findById(req.params.id);
+  // Tour.findOne({_id: req.params.id}); // Alternative findById
+
+  // We implement this because, we have two different response if the tour is not found.
+  if (!tour) {
+    return next(new AppError('No tour found with that ID', 404));
   }
+  res.status(200).json({
+    statusbar: 'success',
+    data: {
+      tour,
+    },
+  });
+
   //'/api/v1/tours/:id/:x/:y' = { id: '0', x: '3', y: 'undefined' } ? - Optional parameter
   /*Testing local database 
   const id = req.params.id * 1; // Trick, convert string to number
@@ -149,27 +98,21 @@ exports.getTour = async (req, res) => {
       tour,
     },
   }); */
-};
+});
 
 // Create a POST route to add new tour to the tours object
-exports.createTour = async (req, res) => {
-  try {
-    // const newTour = new Tour({})
-    // newTour.save() //Call metond on new document
-    //Call metod directory on the tour object
-    const newTour = await Tour.create(req.body);
-    res.status(201).json({
-      statusbar: 'success',
-      data: {
-        tour: newTour,
-      },
-    });
-  } catch (err) {
-    res.status(400).json({
-      statusbar: 'fail',
-      message: err,
-    });
-  }
+exports.createTour = catchAsync(async (req, res, next) => {
+  // const newTour = new Tour({})
+  // newTour.save() //Call metond on new document
+  //Call metod directory on the tour object
+  const newTour = await Tour.create(req.body);
+  res.status(201).json({
+    statusbar: 'success',
+    data: {
+      tour: newTour,
+    },
+  });
+
   /*  Testing local database
   console.log(req.body);
   const newId = tours[tours.length - 1].id + 1;
@@ -188,41 +131,119 @@ exports.createTour = async (req, res) => {
       });
     }
   ); */
-};
+});
 
 // Create a PATCH route to update tour to the tours object
-exports.updateTour = async (req, res) => {
-  try {
-    const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-      new: true, // true to return modified document rather than original
-      setDefaultsOnInsert: true, // Each time that we update the document, then the validators will run again!
-    });
-    res.status(200).json({
-      statusbar: 'success',
-      data: {
-        tour,
-      },
-    });
-  } catch (err) {
-    res.status(404).json({
-      statusbar: 'fail',
-      message: err,
-    });
+exports.updateTour = catchAsync(async (req, res, next) => {
+  const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+    new: true, // true to return modified document rather than original
+    // If document does not contain all of the fields specified in the schema, the missing fields will be populated with their default values.
+    runValidators: true, // Each time that we update the document, then the validators will run again!
+  });
+  // We implement this because, we have two different response if the tour is not found.
+  if (!tour) {
+    return next(new AppError('No tour found with that ID', 404));
   }
-};
+  res.status(200).json({
+    statusbar: 'success',
+    data: {
+      tour,
+    },
+  });
+});
 
 // Create a DELETE route to delete tour to the tours object
-exports.deleteTour = async (req, res) => {
-  try {
-    await Tour.findByIdAndDelete(req.params.id);
-    res.status(204).json({
-      statusbar: 'success',
-      data: null, // nuul - Simpli to show that the tour was deleted and no loger exists
-    });
-  } catch (err) {
-    res.status(404).json({
-      statusbar: 'fail',
-      message: err,
-    });
+exports.deleteTour = catchAsync(async (req, res, next) => {
+  const tour = await Tour.findByIdAndDelete(req.params.id);
+  // We implement this because, we have two different response if the tour is not found.
+  if (!tour) {
+    return next(new AppError('No tour found with that ID', 404));
   }
-};
+  res.status(204).json({
+    statusbar: 'success',
+    data: null, // nuul - Simpli to show that the tour was deleted and no loger exists
+  });
+});
+
+exports.getTourStatistics = catchAsync(async (req, res, next) => {
+  const stats = await Tour.aggregate([
+    // Aggregation pipeline in MongoDB
+    {
+      $match: { ratingsAverage: { $gte: 4.5 } },
+    },
+    {
+      $group: {
+        _id: { $toUpper: '$difficulty' }, //'$ratingsAverage'
+        numTours: { $sum: 1 },
+        numRatings: { $sum: '$ratingsQuantity' },
+        avgRating: { $avg: '$ratingsAverage' },
+        avgPrice: { $avg: '$price' },
+        minPrice: { $min: '$price' },
+        maxPrice: { $max: '$price' },
+      },
+    },
+    {
+      $sort: { avgPrice: 1 },
+    },
+    // {  We cannot match multiples times in MongoDB
+    //   $match: { _id: { $ne: 'EASY' } }
+    // }
+  ]);
+  res.status(200).json({
+    statusbar: 'success',
+    data: {
+      stats,
+    },
+  });
+});
+
+// Count how many tours there are for each of the mounths in a given year
+exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
+  const year = req.params.year * 1;
+  const plan = await Tour.aggregate([
+    {
+      // Deconstructs the startDates array field from the input documents and creates a new document for each element.
+      $unwind: '$startDates',
+    },
+    {
+      // Filters the documents to include only those with startDates that are greater than or equal to the first day of we specified
+      $match: {
+        startDates: {
+          $gte: new Date(`${year}-01-01`),
+          $lte: new Date(`${year}-12-31`),
+        },
+      },
+    },
+    {
+      // Groups documents by month and calculates the number of tour starts for each month
+      $group: {
+        _id: { $month: '$startDates' },
+        numTourStarts: { $sum: 1 },
+        tours: { $push: '$name' },
+      },
+    },
+    {
+      // Add months fields in results 🧐
+      $addFields: { month: '$_id' },
+    },
+    {
+      // _id field should be excluded from the query results.
+      $project: {
+        _id: 0,
+      },
+    },
+    {
+      //It sorts the results of the query in descending order based on the value of the field
+      $sort: { numTourStarts: -1 },
+    },
+    {
+      $limit: 12,
+    },
+  ]);
+  res.status(200).json({
+    statusbar: 'success',
+    data: {
+      plan,
+    },
+  });
+});
