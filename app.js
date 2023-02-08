@@ -30,6 +30,7 @@ This allows the application to serve static files from that directory.
 //Information when the request happened
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
+  // console.log(req.headers);
   next();
 });
 

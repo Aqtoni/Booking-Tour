@@ -12,7 +12,7 @@ const tourSchema = new mongoose.Schema(
       trim: true, // Trim will remove white spaces from the end of the string.
       maxlength: [50, 'A tour name must have less or equal then 50 characters'], // Maximum and minimum length of the tour name
       minlength: [7, 'A tour name must have more or equal then 7 characters'], // This work in creating and updating a tour
-      // validate: [validator.isAlpha, 'Tour name must only contain characters'], // This check tour name 
+      // validate: [validator.isAlpha, 'Tour name must only contain characters'], // This check tour name
     },
     slug: String,
     duration: {
@@ -64,7 +64,7 @@ const tourSchema = new mongoose.Schema(
     },
     //Image on the overview page
     imageCover: {
-      type: String,
+      type: String, // Path to the image on the our file system
       required: [true, 'A tour must have a cover image'],
     },
     images: [String],
@@ -143,6 +143,7 @@ tourSchema.pre('aggregate', function (next) {
   next();
 });
 
+// Mongoose model called 'Tour' that is based on the tourSchema
 const Tour = mongoose.model('Tour', tourSchema);
 module.exports = Tour;
 // Model

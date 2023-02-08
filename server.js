@@ -5,11 +5,8 @@ const dotenv = require('dotenv');
 process.on('uncaughtException', (err) => {
   console.log('UNCAUGH TEXCEPTION! 💥 Shutting down...');
   console.log(err.name, err.message);
-  //A vary graceful way to shutdown the server. 0 - Success/ 1 - Uncaught Exception
-  //Last safety net
-  server.close(() => {
-    process.exit(1);
-  });
+  //Last safety net. A vary graceful way to shutdown the server. 0 - Success/ 1 - Uncaught Exception
+  process.exit(1);
 });
 dotenv.config({ path: './config.env' }); // Read.env file and save variables into node.js environment variables.
 // First read file and then require('./app');
@@ -44,5 +41,3 @@ process.on('unhandledRejection', (err) => {
     process.exit(1);
   });
 });
-
-

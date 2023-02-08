@@ -7,6 +7,7 @@ const handleCastErrorDB = (err) => {
   const message = `Invalid ${err.path}: ${err.value}.`;
   return new AppError(message, 400);
 };
+
 // This error was called by MongoDB driver!
 const handleDuplicateFieldsDB = (err) => {
   // Sends a duplicate field "Duplicate-name" for user in production
@@ -15,6 +16,7 @@ const handleDuplicateFieldsDB = (err) => {
   const message = `Duplicate field value: ${value}. Please use another value!`;
   return new AppError(message, 400);
 };
+
 // Sends a ValidationError message. Extracted from the error message on our tourSchema.
 const handleValidationErrorDB = (err) => {
   //Looping through all message objects, extracting the message into a new array
@@ -23,6 +25,15 @@ const handleValidationErrorDB = (err) => {
   const message = `Invalid input data. ${errors.join('. ')}`;
   return new AppError(message, 400);
 };
+
+// Handle errors related to invalid JWT tokens.
+const handleJWTError = () =>
+  new AppError('Invalid token. Please log in again!', 401);
+
+// Handle errors related to expired JSON Web Tokens (JWTs).
+const handleJWTExpiredError = () =>
+  new AppError('Your token has expired! Please log in again.', 401);
+
 // Error we sent when we in Development
 const sendErrorDev = (err, res) => {
   res.status(err.statusCode).json({
@@ -32,6 +43,7 @@ const sendErrorDev = (err, res) => {
     stack: err.stack,
   });
 };
+
 // Error we sent when we in Production
 const sendErrorProd = (err, res) => {
   // Operational, trusted error: send message to client
@@ -65,6 +77,8 @@ module.exports = (err, req, res, next) => {
     if (err.name === 'CastError') err = handleCastErrorDB(err);
     if (err.code === 11000) err = handleDuplicateFieldsDB(err);
     if (err.name === 'ValidationError') err = handleValidationErrorDB(err);
+    if (err.name === 'JsonWebTokenError') err = handleJWTError();
+    if (err.name === 'TokenExpiredError') err = handleJWTExpiredError();
     sendErrorProd(err, res);
   }
 };
