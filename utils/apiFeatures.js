@@ -19,8 +19,8 @@ class APIFeatures {
 
   sort() {
     if (this.queryString.sort) {
-      const sotrBy = this.query.sort.split(',').join(' ');
-      this.query = this.query.sort(sotrBy); // Value of the field in this case "price"
+      const sortBy = this.queryString.sort.split(',').join(' ');
+      this.query = this.query.sort(sortBy); // Value of the field in this case "price"
       // sort('price raingsAverage');
     } else {
       this.query = this.query.sort('-createdAt');

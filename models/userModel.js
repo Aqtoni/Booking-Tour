@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
@@ -39,13 +40,14 @@ const userSchema = new mongoose.Schema({
     },
   },
   passwordChangedAt: Date, // Date the password was changed
-  //   passwordResetToken: String,
-  //   passwordResetExpires: Date,
-  //   active: {
-  //     type: Boolean,
-  //     default: true,
-  //     select: false,
-  //   },
+  passwordResetToken: String, // Token for password reset
+  passwordResetExpires: Date, // Security maasure Date the password was reset or token expires
+  active: {
+    // Is the user active or not.
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 // Pre-save middleware runs before a user is saved to the database. Between getting the data and saving it to the database.
@@ -56,6 +58,20 @@ userSchema.pre('save', async function (next) {
   this.password = await bcrypt.hash(this.password, 14);
   // After passwordConfirm we delete passwordConfirm field, we don't need it in our database anymore.
   this.passwordConfirm = undefined;
+  next();
+});
+
+// Update changedPasswordAt property for the user. It is a pre-save hook that runs before a document is saved to the database.
+userSchema.pre('save', function (next) {
+  if (!this.isModified('password') || this.isNew) return next();
+  this.passwordChangedAt = Date.now() - 1000; //Ensure that the Token is always created after the password has been changed.
+  next();
+});
+
+// Finds all documents where the "active" field, does not equal false. Middleware will run before any find
+userSchema.pre(/^find/, function (next) {
+  // this points to the current query
+  this.find({ active: { $ne: false } });
   next();
 });
 
@@ -85,6 +101,23 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
 
   // False means NOT changed
   return false;
+};
+
+// Creates a password reset token for a user
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex'); // Create a new reset token for the user.
+  /*   Creates a password reset token and then converts it to a hexadecimal string 
+  This is used to securely store a user's password reset token in the database. */
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  console.log({ resetToken }, this.passwordResetToken);
+
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; //Expiration date 10 minutes
+
+  return resetToken; // This we send to the client.
 };
 
 // Mongoose model called 'User' that is based on the userSchema

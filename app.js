@@ -1,19 +1,59 @@
 const express = require('express');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
+
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 
 const app = express();
+// Set security HTTP headers
+app.use(helmet());
 
-// 1) Middleware. Create an Express application and use the json middleware
+// 1) Global Middleware. Create an Express application and use the json middleware
 console.log(process.env.NODE_ENV); //Check for Development Environment
 if (process.env.NODE_ENV === 'development') {
   //We Check for Development Environment
   app.use(morgan('dev')); // HTTP request logger
 }
-app.use(express.json());
+
+// Limit requests from same API. 100 Requests from the same IP in one hour. If app crashes then limit is reset.
+const limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000,
+  message: 'Too many requests from this IP, please try again in an hour!',
+});
+app.use('/api', limiter); // Use only the API
+
+// Body parser, reading data from body into req.body. If body > 10kb, reject the request
+app.use(express.json({ limit: '10kb' }));
+
+// Data sanitization against NoSQL query injection {"$gt": ""} 😟
+app.use(mongoSanitize());
+
+// Data sanitization against XSS (But it is very old)
+app.use(xss());
+
+// Prevent parameter pollution
+app.use(
+  hpp({
+    whitelist: [
+      'duration',
+      'ratingsQuantity',
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price',
+    ],
+  })
+);
+
+// Serving static files
 app.use(express.static(`${__dirname}/public`));
 /* It tells the application to use the "express.static" middleware, 
 which is used to serve static files (such as images, CSS, and JavaScript files). 
@@ -27,7 +67,7 @@ This allows the application to serve static files from that directory.
 // next();
 // });
 
-//Information when the request happened
+// Test middleware. Information when the request happened
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   // console.log(req.headers);
