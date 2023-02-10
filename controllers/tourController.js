@@ -73,7 +73,8 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
 
 // Create a GET route to retrieve a single tour from the tours object by using  id
 exports.getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById(req.params.id);
+  const tour = await Tour.findById(req.params.id).populate('reviews');
+
   // Tour.findOne({_id: req.params.id}); // Alternative findById
 
   // We implement this because, we have two different response if the tour is not found.

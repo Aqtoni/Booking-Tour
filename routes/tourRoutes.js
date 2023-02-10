@@ -3,10 +3,24 @@ const express = require('express');
 const tourController = require('./../controllers/tourController');
 //const {getAllTours} = require('./../controllers/tourController'); Alternative of tourController Object
 const authController = require('./../controllers/authController');
+const reviewController = require('./../controllers/reviewController');
+const reviewsRouter = require('./../routes/reviewRoutes');
+
 const router = express.Router();
 
 //router.param('id', tourController.checkID); //Param Middleware. Here we could check if the user is logged in or not,
 // or if the user has the privileg to access to even write to the database.
+
+// Nested Routes v1 - off/just sample, and v2 - working.
+/* router
+  .route('/:tourId/reviews')
+  .post(
+    authController.protect,
+    authController.restrictTo('user'),
+    reviewController.createReview
+  ); */
+
+router.use('/:tourId/reviews', reviewsRouter); // Started in app on tourRouter a then go here
 
 router
   .route('/top-3-cheap')

@@ -1,6 +1,7 @@
 //1) - Create a model from the schema.
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+//const User = require('./userModel'); // Need for EMBEDDING
 const validator = require('validator');
 //Specify a schena for our data. Schema type options for each field.
 const tourSchema = new mongoose.Schema(
@@ -80,6 +81,38 @@ const tourSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    startLocation: {
+      // Can be implemented in the location as a day 0.
+      // GeoJSON
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point'],
+      },
+      coordinates: [Number], // Longitude first, then second the latitude
+      address: String,
+      description: String,
+    },
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point'],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number, // Start day of the tour
+      },
+    ],
+    guides: [
+      // Put user guides in the tour
+      {
+        type: mongoose.Schema.ObjectId, // Type of the guide is ObjectId
+        ref: 'User', // Reference to the user
+      },
+    ],
   },
   {
     // Virtual Properties
@@ -97,12 +130,26 @@ tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
 });
 
+// Virtual populate Tours and Reviews / Before we set popular will show null.
+tourSchema.virtual('reviews', {
+  ref: 'Review', // Name of the model that we want to reference.
+  foreignField: 'tour', // Referenced tour on reviewSchema, witch contains two fields
+  localField: '_id', // Specify where the id is located. Simple is tour id
+});
+
 // MIDDLEWARE DOCUMENT : runs before .save() and .create()
 // The code uses the pre-save hook to automatically generate a slug from the tour's name before it is saved in the database.
 tourSchema.pre('save', function (next) {
   this.slug = slugify(this.name, { lower: true });
   next();
 });
+
+/* // EMBEDDING Put the user in the array of guides 
+tourSchema.pre('save', async function(next) {
+  const guidesPromises = this.guides.map(async id => await User.findById(id));
+  this.guides = await Promise.all(guidesPromises);
+  next();
+}); */
 
 // Hook is called before the document is saved to the database
 // tourSchema.pre('save', function(next) {
@@ -125,6 +172,15 @@ tourSchema.pre(/^find/, function (next) {
   this.find({ secretTour: { $ne: true } });
 
   this.start = Date.now();
+  next();
+});
+
+// Add a guide to the all tour
+tourSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt', // Delete the field from the response
+  });
   next();
 });
 

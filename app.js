@@ -10,6 +10,7 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
 
 const app = express();
 // Set security HTTP headers
@@ -74,9 +75,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// 3) Routes
+// 3) Routes. When there is a request, the middleware function is called.
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 //Magic of Middleware 2 Order matters
 // app.use((req, res, next) => {
 // console.log("Hello from the middleware!🦀");
