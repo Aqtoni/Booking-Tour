@@ -39,6 +39,7 @@ const tourSchema = new mongoose.Schema(
       default: 4.5, // If we do not specify, all tour automatically set a 4.5 stars.
       min: [1, 'Rating must be above 1.0'], // The user can choose only between 1.0 and 5.0
       max: [5, 'Rating must be below 5.0'],
+      set: (val) => Math.round(val * 10) / 10, // On back-end side 4.6666 = 4.7
     },
     ratingsQuantity: {
       type: Number,
@@ -125,6 +126,13 @@ const tourSchema = new mongoose.Schema(
   }
 );
 
+tourSchema.index({ price: 1, ratingsAverage: -1 });
+tourSchema.index({ slug: 1 });
+/* Sort by price. Iterate over specified elements instead of all. 
+Example You need to output 3 tours with a cheap price, instead of scanning all documents, only 3 documents are scanned. */
+
+tourSchema.index({ startLocation: '2dsphere' }); // MongoDB Index supports queries that calculate geometries on an earth-like sphere.
+
 // This allows for the duration of the tour to be expressed in weeks instead of days.
 tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
@@ -191,13 +199,13 @@ tourSchema.post(/^find/, function (docs, next) {
 });
 
 // AGGREGATION MIDDLEWARE: same functionality as Query middleware. We hiding secretTours in aggregation.
-tourSchema.pre('aggregate', function (next) {
-  // Adds the filter criteria to the beginning of the pipeline.
-  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
-
-  console.log(this.pipeline());
-  next();
-});
+// tourSchema.pre('aggregate', function (next) {
+//   // Adds the filter criteria to the beginning of the pipeline.
+//   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+// FIXME:
+//   console.log(this.pipeline());
+//   next();
+// });
 
 // Mongoose model called 'Tour' that is based on the tourSchema
 const Tour = mongoose.model('Tour', tourSchema);

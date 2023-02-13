@@ -27,19 +27,41 @@ router
   .get(tourController.bestTopTours, tourController.getAllTours);
 
 router.route('/tour-statistics').get(tourController.getTourStatistics);
-router.route('/mounthly-plan/:year').get(tourController.getMonthlyPlan);
+router
+  .route('/mounthly-plan/:year')
+  .get(
+    authController.protect,
+    authController.restrictTo('admin', 'moderator', 'guide'),
+    tourController.getMonthlyPlan
+  );
+
+router
+  .route('/tours-within/:distance/center/:latlng/unit/:unit')
+  .get(tourController.getToursWithin);
+// /tours-within?distance=233&center=-40,45&unit=mi
+// /tours-within/233/center/-40,45/unit/mi
+
+router.route('/distances/:latlng/unit/:unit').get(tourController.getDistances);
 
 router
   .route('/')
-  .get(authController.protect, tourController.getAllTours)
-  .post(tourController.createTour);
+  .get(tourController.getAllTours)
+  .post(
+    authController.protect,
+    authController.restrictTo('admin', 'moderator'),
+    tourController.createTour
+  );
 //.get(catchAsync(tourController.getAllTours)); //Alternative of catchAsync witch we use in tourController because all fn is async
 //.post(tourController.CheckBody, tourController.createTour); // First check CheckBody then createTour locally
 
 router
   .route('/:id')
   .get(tourController.getTour)
-  .patch(tourController.updateTour)
+  .patch(
+    authController.protect,
+    authController.restrictTo('admin', 'moderator'),
+    tourController.updateTour
+  )
   .delete(
     authController.protect,
     authController.restrictTo('admin', 'moderator'), // Pass some users roles, which allows deleting your only admin or moderator.

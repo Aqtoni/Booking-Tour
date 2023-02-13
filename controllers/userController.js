@@ -3,6 +3,7 @@ and return it to the user to view in the browser. */
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
+const factory = require('./handlerFactory');
 
 // Loop through all the fields in the user model, and check if it's a allowed field, and add in newObj.
 const filterObj = (obj, ...allowedFields) => {
@@ -14,20 +15,13 @@ const filterObj = (obj, ...allowedFields) => {
   return newObj;
 };
 
-// 1) Route Handlers. Create a GET route to retrieve all User from the User object
-exports.getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find();
+// Get document based on user ID. We don't have to pass in any ID as URL parameters.
+exports.getMe = (req, res, next) => {
+  req.params.id = req.user.id; // This allows for the user's id to be accessed and used in other parts API
+  next();
+};
 
-  // SEND RESPONSE
-  res.status(200).json({
-    status: 'success',
-    results: users.length,
-    data: {
-      users,
-    },
-  });
-});
-
+// 1) Route Handlers.
 // Update authenticated user profile
 exports.updateMe = catchAsync(async (req, res, next) => {
   // 1) Create error if user POSTs password data
@@ -65,34 +59,18 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
   });
 });
 
-// Create a GET route to retrieve a single User from the Users object by using  id
-exports.getUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not yet defined!',
-  });
-};
-
-// Create a POST route to add new User to the Users object
+//A GET route to retrieve all User from the User object
+exports.getAllUsers = factory.getAll(User);
+// A GET route to retrieve a single User from the Users object by using  id
+exports.getUser = factory.getOne(User);
+// A POST route to add new User to the Users object
 exports.createUser = (req, res) => {
   res.status(500).json({
     status: 'error',
-    message: 'This route is not yet defined!',
+    message: 'This route is not defined! Please use /SignUp instead.',
   });
 };
-
-// Create a PATCH route to update User to the Users object
-exports.updateUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not yet defined!',
-  });
-};
-
-// Create a DELETE route to delete User to the Users object
-exports.deleteUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not yet defined!',
-  });
-};
+// A PATCH route to update User to the Users object
+exports.updateUser = factory.updateOne(User); // Update data is only for admistration. Update data that is not for password updates.
+// A DELETE route to delete User to the Users object
+exports.deleteUser = factory.deleteOne(User); // Delete user from the database can only admistration

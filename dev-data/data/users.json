@@ -1,7 +1,7 @@
 [
   {
     "_id": "5c8a1d5b0190b214360dc057",
-    "name": "Jonas Schmedtmann",
+    "name": "Anton Kovtun",
     "email": "admin@natours.io",
     "role": "admin",
     "active": true,
@@ -178,5 +178,14 @@
     "active": true,
     "photo": "user-20.jpg",
     "password": "$2a$12$uA9FsDw63v6dkJKGlLQ/8ufYBs8euB7kqIQewyYlZXU5azEKeLEky"
+  },
+  {
+    "_id": "5c8a1d5b0190b214360dc058",
+    "name": "Jonas Schmedtmann",
+    "email": "admin@example.com",
+    "role": "admin",
+    "active": true,
+    "photo": "user-21.jpg",
+    "password": "$2a$12$Q0grHjH9PXc6SxivC8m12.2mZJ9BbKcgFpwSG4Y1ZEII8HJVzWeyS"
   }
 ]

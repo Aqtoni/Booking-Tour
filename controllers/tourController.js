@@ -3,8 +3,8 @@ and return it to the user to view in the browser. */
 // Require the 'fs' and 'express' modules
 // const fs = require('fs');
 const Tour = require('./../models/tourModel');
-const APIFeatures = require('./../utils/apiFeatures');
 const catchAsync = require('./../utils/catchAsync');
+const factory = require('./handlerFactory');
 const AppError = require('./../utils/appError');
 
 // Manipulate the query object. This code is an Express middleware function that modifies the request query object.
@@ -14,177 +14,39 @@ exports.bestTopTours = (req, res, next) => {
   req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
   next();
 };
-/* // 2) Testing local database. Read the tours data from the file system and parse it into a JavaScript object
-const tours = JSON.parse(
-  fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
-); */
 
-/* 3) The parameter is called 'id' and when it is used in a request, 
-the console will log the value of 'val' (the value of the 'id' parameter) */
-/* exports.checkID = (req, res, next, val) => {
-  console.log(`Tour ID is : ${val}`); //ID val in  Middleware
-  if (req.params.id * 1 > tours.length) {
-    // Trick, convert string to number
-    // Check if id > tours.length
-    // if (!trour) This is same as if (id > tours.length) but written after Search tour id!!!
-    return res.status(404).json({
-      status: 'error',
-      message: 'Tour not found',
-    });
-  }
-  next();
-}; */
-
-/* 4) This code is a middleware function that checks the body of an incoming request for the presence of both a 'name' and 'price' field. 
-If either field is missing, it will return a 400 status response with an error message. 
-If both fields are present, it will call the next() function to continue with the request. */
-/* exports.CheckBody = (req, res, next) => {
-  if (!req.body.name || !req.body.price) {
-    return res.status(400).json({
-      status: 'fail',
-      message: 'Missing name or price',
-    });
-  }
-  next();
-}; */
-
-// 5) Route Handlers. Create a GET route to retrieve all tours from the tours object
-exports.getAllTours = catchAsync(async (req, res, next) => {
-  // 5.5) Execute the query
-  // Create an Object of the API features class to query a database for Tour documents.
-  const features = new APIFeatures(Tour.find(), req.query)
-    .filter()
-    .sort()
-    .fieldsLimit()
-    .pagination();
-  const tours = await features.query;
-
-  // 5.6) Send response
-  res.status(200).json({
-    statusbar: 'success',
-    // requestedAt: req.requestTime, //Information for users when the request happened
-    // Also Testing local database
-    results: tours.length,
-    data: {
-      tours,
-    },
-  });
-});
-
-// Create a GET route to retrieve a single tour from the tours object by using  id
-exports.getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById(req.params.id).populate('reviews');
-
-  // Tour.findOne({_id: req.params.id}); // Alternative findById
-
-  // We implement this because, we have two different response if the tour is not found.
-  if (!tour) {
-    return next(new AppError('No tour found with that ID', 404));
-  }
-  res.status(200).json({
-    statusbar: 'success',
-    data: {
-      tour,
-    },
-  });
-
-  //'/api/v1/tours/:id/:x/:y' = { id: '0', x: '3', y: 'undefined' } ? - Optional parameter
-  /*Testing local database 
-  const id = req.params.id * 1; // Trick, convert string to number
- const tour = tours.find((tour) => tour.id === id); // Find tour in arr by id
-  console.log(req.params);
-  res.status(200).json({
-    statusbar: 'success',
-    data: {
-      tour,
-    },
-  }); */
-});
-
-// Create a POST route to add new tour to the tours object
-exports.createTour = catchAsync(async (req, res, next) => {
-  // const newTour = new Tour({})
-  // newTour.save() //Call metond on new document
-  //Call metod directory on the tour object
-  const newTour = await Tour.create(req.body);
-  res.status(201).json({
-    statusbar: 'success',
-    data: {
-      tour: newTour,
-    },
-  });
-
-  /*  Testing local database
-  console.log(req.body);
-  const newId = tours[tours.length - 1].id + 1;
-  const newTour = Object.assign({ id: newId }, req.body);
-
-  tours.push(newTour);
-  fs.writeFile(
-    `${__dirname}/dev-data/data/tours-simple.json`,
-    JSON.stringify(tours),
-    (err) => {
-      res.status(201).json({
-        statusbar: 'success',
-        data: {
-          tour: newTour,
-        },
-      });
-    }
-  ); */
-});
-
-// Create a PATCH route to update tour to the tours object
-exports.updateTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-    new: true, // true to return modified document rather than original
-    // If document does not contain all of the fields specified in the schema, the missing fields will be populated with their default values.
-    runValidators: true, // Each time that we update the document, then the validators will run again!
-  });
-  // We implement this because, we have two different response if the tour is not found.
-  if (!tour) {
-    return next(new AppError('No tour found with that ID', 404));
-  }
-  res.status(200).json({
-    statusbar: 'success',
-    data: {
-      tour,
-    },
-  });
-});
-
-// Create a DELETE route to delete tour to the tours object
-exports.deleteTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndDelete(req.params.id);
-  // We implement this because, we have two different response if the tour is not found.
-  if (!tour) {
-    return next(new AppError('No tour found with that ID', 404));
-  }
-  res.status(204).json({
-    statusbar: 'success',
-    data: null, // nuul - Simpli to show that the tour was deleted and no loger exists
-  });
-});
+// A GET route to retrieve all tours from the tours object
+exports.getAllTours = factory.getAll(Tour);
+// A GET route to retrieve a single tour from the tours object by using  id
+exports.getTour = factory.getOne(Tour, {
+  path: 'reviews', // Also we can specify select
+}); // Include a populated field 'reviews'
+// A POST route to add new tour to the tours object
+exports.createTour = factory.createOne(Tour);
+// A PATCH route to update tour to the tours object
+exports.updateTour = factory.updateOne(Tour);
+// A DELETE route to delete tour to the tours object
+exports.deleteTour = factory.deleteOne(Tour);
 
 exports.getTourStatistics = catchAsync(async (req, res, next) => {
   const stats = await Tour.aggregate([
     // Aggregation pipeline in MongoDB
     {
-      $match: { ratingsAverage: { $gte: 4.5 } },
+      $match: { ratingsAverage: { $gte: 4.5 } }, // Filter out tours with rating >= 4.5
     },
     {
       $group: {
         _id: { $toUpper: '$difficulty' }, //'$ratingsAverage'
-        numTours: { $sum: 1 },
-        numRatings: { $sum: '$ratingsQuantity' },
-        avgRating: { $avg: '$ratingsAverage' },
-        avgPrice: { $avg: '$price' },
-        minPrice: { $min: '$price' },
-        maxPrice: { $max: '$price' },
+        numTours: { $sum: 1 }, // Number of tours
+        numRatings: { $sum: '$ratingsQuantity' }, // Number of ratings
+        avgRating: { $avg: '$ratingsAverage' }, // Average rating
+        avgPrice: { $avg: '$price' }, // Average price
+        minPrice: { $min: '$price' }, // Minimum price
+        maxPrice: { $max: '$price' }, // Maximum price
       },
     },
     {
-      $sort: { avgPrice: 1 },
+      $sort: { avgPrice: 1 }, // Sort by average price
     },
     // {  We cannot match multiples times in MongoDB
     //   $match: { _id: { $ne: 'EASY' } }
@@ -248,3 +110,116 @@ exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+// Show how many tours are nearby
+exports.getToursWithin = catchAsync(async (req, res, next) => {
+  const { distance, latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(',');
+
+  // Special unit JSON. Order to get the radians we neet to divide our distance by radius of earth.
+  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+
+  if (!lat || !lng) {
+    next(
+      new AppError(
+        'Please provide latitude and longitude in the format lat,lng.',
+        400
+      )
+    );
+  }
+
+  const tours = await Tour.find({
+    startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } }, // First we need to find the latitude and then longitude
+  });
+  // console.log(distance, latlng, unit);
+
+  res.status(200).json({
+    status: 'success',
+    results: tours.length,
+    data: {
+      data: tours,
+    },
+  });
+});
+/* MongoDB's GeoJSON feature to find all tours that have a start location within a certain radius of a given longitude and latitude. 
+It is using the $geoWithin operator with the $centerSphere operator to specify the center point and radius. 
+The result will be an array of all tours that have a start location within the specified radius. */
+
+// Show the distance to the starting point of the tour
+exports.getDistances = catchAsync(async (req, res, next) => {
+  const { latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(',');
+
+  const multiplier = unit === 'mi' ? 0.000621371 : 0.001;
+
+  if (!lat || !lng) {
+    next(
+      new AppError(
+        'Please provide latitude and longitude in the format lat,lng.',
+        400
+      )
+    );
+  }
+
+  const distances = await Tour.aggregate([
+    {
+      $geoNear: {
+        // geoNear Always need to be the first stage
+        near: {
+          type: 'Point', // GeoJSON type
+          coordinates: [lng * 1, lat * 1], // String coordinates converted to number
+        },
+        distanceField: 'distance', // This field will be created and where all calculated distances will be stored.
+        distanceMultiplier: multiplier, // Convert distance meters to kilometers or miles
+      },
+    },
+    {
+      // Leave only the distance and name field
+      $project: {
+        distance: 1,
+        name: 1,
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      data: distances,
+    },
+  });
+});
+
+/* // 2) Testing local database. Read the tours data from the file system and parse it into a JavaScript object
+const tours = JSON.parse(
+  fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
+); */
+
+/* 3) The parameter is called 'id' and when it is used in a request, 
+the console will log the value of 'val' (the value of the 'id' parameter) */
+/* exports.checkID = (req, res, next, val) => {
+  console.log(`Tour ID is : ${val}`); //ID val in  Middleware
+  if (req.params.id * 1 > tours.length) {
+    // Trick, convert string to number
+    // Check if id > tours.length
+    // if (!trour) This is same as if (id > tours.length) but written after Search tour id!!!
+    return res.status(404).json({
+      status: 'error',
+      message: 'Tour not found',
+    });
+  }
+  next();
+}; */
+
+/* 4) This code is a middleware function that checks the body of an incoming request for the presence of both a 'name' and 'price' field. 
+If either field is missing, it will return a 400 status response with an error message. 
+If both fields are present, it will call the next() function to continue with the request. */
+/* exports.CheckBody = (req, res, next) => {
+  if (!req.body.name || !req.body.price) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'Missing name or price',
+    });
+  }
+  next();
+}; */
