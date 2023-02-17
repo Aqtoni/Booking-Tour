@@ -69,6 +69,15 @@ exports.login = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
+// Log out user
+exports.logout = (req, res) => {
+  res.cookie('jwt', 'loggedout', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+  res.status(200).json({ status: 'success' });
+};
+
 // Protect routes
 exports.protect = catchAsync(async (req, res, next) => {
   // 1) Getting token and check of it's there
@@ -78,8 +87,9 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
   }
-  // console.log(tooken);
   if (!token) {
     return next(
       new AppError('You are not logged in! Please log in to get access.', 401)
@@ -107,8 +117,40 @@ exports.protect = catchAsync(async (req, res, next) => {
   // GRANT ACCESS TO PROTECTED ROUTE
   // VERY IMPORTANT!!!
   req.user = currentUser; //Put data into request object ant then data wiil be available at later, when we need to define user role.
+  res.locals.user = currentUser; // This allows the user to access the currentUser variable in any view rendered by Express.
   next();
 });
+
+// Only for render pages no errors!
+exports.isLoggedIn = async (req, res, next) => {
+  // 1) Getting token and check of it's there
+  if (req.cookies.jwt) {
+    try {
+      // console.log(tooken);
+      // 2) Verification token. Contains user id creation and of the expiration date tokens
+      const decoded = await promisify(jwt.verify)(
+        req.cookies.jwt,
+        process.env.JWT_SECRET
+      );
+      // console.log(decoded);
+      // 3) Check if user still exists
+      const currentUser = await User.findById(decoded.id);
+      if (!currentUser) {
+        return next();
+      }
+      // 4) Check if user changed password after the token was issued
+      if (currentUser.changedPasswordAfter(decoded.iat)) {
+        return next();
+      }
+      // There is a logger in user.
+      res.locals.user = currentUser;
+      return next();
+    } catch (err) {
+      return next();
+    }
+  }
+  next();
+};
 
 // Grant access to protected routes
 exports.restrictTo = (...roles) => {
