@@ -12,7 +12,8 @@ exports.setTourUserId = (req, res, next) => {
   if (!req.body.user) req.body.user = req.user.id;
   next();
 };
-
+// A GET route to all review tour to the reviews object
+exports.getAllReviews = factory.getAll(Review);
 // A POST route to add new reviews tour to the reviews object
 exports.createReview = factory.createOne(Review);
 // A GET route to review tour to the reviews object

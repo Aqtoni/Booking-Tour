@@ -118,6 +118,9 @@ exports.createUser = (req, res) => {
     message: 'This route is not defined! Please use /SignUp instead.',
   });
 };
+
+exports.getAllUsers = factory.getAll(User);
+exports.getUser = factory.getOne(User);
 // A PATCH route to update User to the Users object
 exports.updateUser = factory.updateOne(User); // Update data is only for admistration. Update data that is not for password updates.
 // A DELETE route to delete User to the Users object

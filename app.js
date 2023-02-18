@@ -66,12 +66,12 @@ app.use(
   })
 );
 
-// app.use(
-//   helmet({
-//     contentSecurityPolicy: false,
-//     crossOriginEmbedderPolicy: false,
-//   })
-// );
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 // Create an Express application and use the json middleware
 console.log(process.env.NODE_ENV); //Check for Development Environment

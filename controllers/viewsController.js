@@ -6,6 +6,14 @@ const Booking = require('../models/bookingModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
+exports.alert = (req, res, next) => {
+  const { alert } = req.query;
+  if (alert === 'booking')
+    res.locals.alert =
+      "Your booking was successful! Please check your email for a confirmation. If your booking doesn't show up here immediatly, please come back later.";
+  next();
+};
+
 //Getting all tour data to display on the home page
 exports.getOverview = catchAsync(async (req, res, next) => {
   // 1) Get tour data from collection
@@ -47,11 +55,19 @@ exports.getMyTours = catchAsync(async (req, res, next) => {
   // 2) Find tours with the returned IDs
   const tourIDs = bookings.map((el) => el.tour);
   const tours = await Tour.find({ _id: { $in: tourIDs } });
-
-  res.status(200).render('overview', {
-    title: 'My Tours',
-    tours,
-  });
+  
+  if (bookings.length === 0) {
+    res.status(200).render('nullbooking', {
+      title: 'Book Tours',
+      headLine: `You haven't booked any tours yet!`,
+      msg: `Please book a tour and come back. 🙂`,
+    });
+  } else {
+    res.status(200).render('overview', {
+      title: 'My Tours',
+      tours,
+    });
+  }
 });
 
 // Getting login information to display

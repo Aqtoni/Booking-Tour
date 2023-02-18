@@ -1,0 +1,85 @@
+The version 13 :
+Finishing the Bookings API
+
+The version 12 :
+Saving and Resizing Image to Database
+Credit Card Payments with Stripe
+Modelling the Bookings
+Rendering a User's Booked Tours
+
+The version 11 :
+Server-Side Rendering with Pug Templates
+Create viewRoutes
+Create viewsController
+Building the Tour Overview
+Building the Tour Page
+Including a Map with Mapbox
+Logging and Logging Users with Our API
+Rendering Error Pages
+Updating User Data with Our API
+
+The version 10 :
+Global Handling functions
+Improved Authentication and Authorization
+Importing Review and User Data
+Improving Read Performance with Indexes
+Calculating Average Rating on Tours
+Preventing Duplicate
+Geospatial Queries and Aggregation
+
+The version 9 :
+MongoDB Data Modelling
+Child and Parent Referencing
+Simple Nested Routes
+
+The version 8 :
+Password Reset Functionality
+Updating the Current User Data
+Implementing Rate Limiting
+Setting Security HTTP Headers
+Data Sanitization
+
+The version 7 :
+Modelling Users
+Managing Passwords
+Signing and Logging in Users
+Protecting Routes
+Added User roles and permissions
+
+The version 6 :
+Refactoring API
+Aggregation Pipeline
+Bild Custom Validators
+Debugging 
+Create Error class
+Handling Validation
+
+The version 5 :
+Bild Mongoose Schema
+Refactoring for MVC
+Connecting methods to a cloud database
+Bild script for import and delete data to DB.
+Improved API Features
+
+
+The version 4 :
+Implemented connection to DB
+Setting - Prettier and Eslint
+Added devDependencies
+
+The version 3 :
+Refactoring File Structure 
+Remove a lol code of app.js
+Added 2 folder controllers and routes
+
+The version 2 :
+Refactoring Routes
+
+The version 1 :
+Implemented such functions as :
+Read the tours data from the file system.
+getAllTours - Retrieve all tours from the tours object.
+getTour - Retrieve a single tour from the tours object by using id.
+createTour - Add new tour to the tours object.
+updateTour - Update tour to the tours object.
+deleteTour - Delete tour to the tours object.
