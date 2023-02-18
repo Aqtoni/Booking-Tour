@@ -13,9 +13,11 @@ const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
+const bookingRouter = require('./routes/bookingRoutes');
 const viewRouter = require('./routes/viewRoutes');
 
 const app = express();
+app.enable('trust proxy');
 
 // Sets the view engine to pug and sets the views directory
 app.set('view engine', 'pug');
@@ -121,7 +123,7 @@ app.use(
 // Test middleware. Information when the request happened
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  console.log(req.cookies);
+  // console.log(req.cookies);
   // console.log(req.headers);
   next();
 });
@@ -131,6 +133,7 @@ app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/bookings', bookingRouter);
 //Magic of Middleware 2 Order matters
 // app.use((req, res, next) => {
 // console.log("Hello from the middleware!🦀");

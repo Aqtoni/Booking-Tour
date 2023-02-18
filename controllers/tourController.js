@@ -2,10 +2,67 @@
 and return it to the user to view in the browser. */
 // Require the 'fs' and 'express' modules
 // const fs = require('fs');
+const multer = require('multer');
+const sharp = require('sharp');
 const Tour = require('./../models/tourModel');
 const catchAsync = require('./../utils/catchAsync');
 const factory = require('./handlerFactory');
 const AppError = require('./../utils/appError');
+
+// Method creates a storage engine that stores files in memory as Buffer objects
+const multerStorage = multer.memoryStorage();
+
+// Photo filter, goal is to only accept image files
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Not an image! Please upload only images.', 400), false);
+  }
+};
+const upload = multer({
+  storage: multerStorage, // Where the uploaded files should be stored
+  fileFilter: multerFilter, // Only accept image files
+});
+
+// Upload multiple images for a tour
+exports.uploadTourImages = upload.fields([
+  { name: 'imageCover', maxCount: 1 },
+  { name: 'images', maxCount: 3 },
+]);
+// upload.single('image') req.file
+// upload.array('images', 5) req.files
+
+// Resize upload image of tour
+exports.resizeTourImages = catchAsync(async (req, res, next) => {
+  if (!req.files.imageCover || !req.files.images) return next(); // If there is no image or multiple images, go to the next middleware
+  // 1) Cover image
+  req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`; // Create a unique name for the cover image
+  await sharp(req.files.imageCover[0].buffer) // Image conversion
+    .resize(2000, 1333)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/img/tours/${req.body.imageCover}`);
+
+  // 2) Images
+  req.body.images = [];
+
+  await Promise.all(
+    req.files.images.map(async (file, i) => {
+      const filename = `tour-${req.params.id}-${Date.now()}-${i + 1}.jpeg`;
+
+      await sharp(file.buffer)
+        .resize(2000, 1333)
+        .toFormat('jpeg')
+        .jpeg({ quality: 90 })
+        .toFile(`public/img/tours/${filename}`);
+
+      req.body.images.push(filename);
+    })
+  );
+
+  next();
+});
 
 // Manipulate the query object. This code is an Express middleware function that modifies the request query object.
 exports.bestTopTours = (req, res, next) => {

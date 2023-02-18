@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
     lowercase: true, // lowercase email address
     validate: [validator.isEmail, 'Please provide a valid email'], // Validate email address format.
   },
-  photo: String, // Path to the image on the our file system
+  photo: { type: String, default: 'default.jpg' }, // Path to the image on the our file system
   role: {
     type: String,
     enum: ['user', 'guide', 'moderator', 'admin'], //All role of the user
